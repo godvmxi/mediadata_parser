@@ -85,7 +85,14 @@ int aac_parser_update_adts_header_list(struct aac_parser_t *parser){
 	for(i = 0; i < parser->size; i++){
 		header = (uint8_t *)(parser->buf+i);
 		if(*header  == 0xFF && (*(header+1) & 0xF0) == 0xF0){
-			printf("header ->%d -->%X %X\n", i, *header,*(header+1));
+#if 1
+			printf("header ->%8d -->%3X %3X : ", i, *header,*(header+1));
+			int j = 0;
+			for(; j < 7; j++){
+				printf("%3X", header[j]);
+			}
+			printf("\n");
+#endif
 			if(adts_parse_header(header, parser->adts_header_list + adts_index) < 0){
 				//printf("header ->%d %X %X\n", i, *header,*(header+i));
 				continue;
