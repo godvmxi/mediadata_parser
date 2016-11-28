@@ -118,13 +118,21 @@ int adts_parse_header(uint8_t *buf, adts_header *header){
 	}
 	header->original = (buf[3] >> 5) & 1;
 	header->home = (buf[3]>> 4)  & 1;
-	
 
 	//adts_variable header
+	header->copyright_identification_bit = (buf[3] >> 3)&1;
+	header->copyright_identification_start = (buf[3] >> 2) & 1;
+	header->aac_frame_length = ( ((uint16_t)(buf[3] & 0x03)) << 11 ) |
+							   ((uint16_t) buf[4]) << 3 |
+							   ((uint16_t)  (buf[5] >> 5))
+							   ;
+	printf("adts size ->%d\n", header->aac_frame_length);
+	header->adts_buffer_fullness = 0;
+	header->no_raw_data_blocks_in_frame = 0;
+	header->crc_check = 0;
 
 
-
-	return 0;
+	return header->aac_frame_length;
 }
 int aac_parser_update_adts_header_list(struct aac_parser_t *parser){
 	assert(parser != NULL);
