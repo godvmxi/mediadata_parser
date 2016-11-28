@@ -30,26 +30,26 @@ typedef struct
 } adts_header;
 struct aac_parser_t{
 	char *buf;
-	uint32_t size;
+	long size;
 	uint32_t adts_number;
-	uint32_t *adts_offset_list;
+	long *adts_offset_list;
 	adts_header *adts_header_list;
 };
-int aac_parser_adts_fixed_header(char *buf, adts_header *header){
+int aac_parser_adts_fixed_header(uint8_t *buf, adts_header *header){
 
 	return 0;
 }
-int aac_parser_adts_variable_header(char *buf, adts_header *header){
+int aac_parser_adts_variable_header(uint8_t *buf, adts_header *header){
 
 	return 0;
 }
-int aac_parser_adts_error_check(char *buf, adts_header *header){
+int aac_parser_adts_error_check(uint8_t *buf, adts_header *header){
 
 	return 0;
 }
-int aac_parser_parse_adts_header(char *buf, adts_header *header){
+int adts_parse_header(uint8_t *buf, adts_header *header){
 	assert(buf != NULL);
-	header->id = buf[1] & 0x0F;
+	header->id = (buf[1] & 0x08) >> 3;
 	switch(header->id){
 		case 0:
 			break;
@@ -58,22 +58,45 @@ int aac_parser_parse_adts_header(char *buf, adts_header *header){
 		default:
 			return -1;
 	}
+	header->layer = (buf[1] & 0x06) >> 1;
+	if(header->layer != 0x00){
+		return -1;
+	}
+	header->protection_absent = buf[1] * 0x1;
+	header->profile = (buf[2] & 0xC0) >> 2;
+	switch(header->profile){
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+			break;
+		default:
+			return -1;
+	}
+
 
 	return 0;
 }
 int aac_parser_update_adts_header_list(struct aac_parser_t *parser){
 	assert(parser != NULL);
 	int i = 0;
-	unsigned char *header = NULL;
+	uint8_t *header = NULL;
 	int adts_index = 0;
 	for(i = 0; i < parser->size; i++){
-		header = (unsigned char *)(parser->buf+i);
-		//printf("header ->%X %X\n", *header,*(header+i));
+		header = (uint8_t *)(parser->buf+i);
 		if(*header  == 0xFF && (*(header+1) & 0xF0) == 0xF0){
+			printf("header ->%d -->%X %X\n", i, *header,*(header+1));
+			if(adts_parse_header(header, parser->adts_header_list + adts_index) < 0){
+				//printf("header ->%d %X %X\n", i, *header,*(header+i));
+				continue;
+			}
 			parser->adts_offset_list[adts_index++] = i;
 			printf("find header ->%d\n", i);
 		}
 		//break;
+		if(i > 2500){
+			break;
+		}
 	}
 }
 struct aac_parser_t *aac_parser_init(char *filename){
@@ -84,7 +107,7 @@ struct aac_parser_t *aac_parser_init(char *filename){
 		return NULL;
 	}
 	fseek(fd, 0, SEEK_END);
-	size_t file_size = ftell(fd);
+	long file_size = ftell(fd);
 	if(file_size <= 0){
 		printf("empty aac file\n");
 		return NULL;
@@ -104,14 +127,21 @@ struct aac_parser_t *aac_parser_init(char *filename){
 		free(parser);
 		return NULL;
 	}
-	int result = fread(parser->buf, 1, file_size, fd);
+	long result = fread(parser->buf, 1, file_size, fd);
 	if(result != file_size){
-		printf("read aac to memory error ->%d:%d\n", file_size, result);
+		printf("read aac to memory error ->%ld:%ld\n", file_size, result);
 	}
 	fclose(fd);
-	parser->adts_offset_list = malloc((file_size / 20) * sizeof(size_t));
+	int adts_number = file_size / 20;
+	parser->adts_offset_list = malloc(adts_number * sizeof(long));
 	if(parser->adts_offset_list == NULL){
 		printf("malloc adts offset list error\n");
+		return NULL;
+	}
+	memset(parser->adts_offset_list, 0, adts_number * sizeof(long));
+	parser->adts_header_list =  malloc(adts_number *sizeof(adts_header));
+	if(parser->adts_header_list == NULL){
+		printf("malloc adts_header_list error\n");
 		return NULL;
 	}
 	aac_parser_update_adts_header_list(parser);
