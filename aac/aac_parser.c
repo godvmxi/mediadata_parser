@@ -161,7 +161,6 @@ int aac_parser_update_adts_header_list(struct aac_parser_t *parser){
 				printf("\t!!!find header ->%d\n", i);
 				i += adts_len;
 				i--;
-
 			}
 		}
 		//break;
