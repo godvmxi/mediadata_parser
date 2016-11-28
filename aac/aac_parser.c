@@ -56,14 +56,16 @@ int adts_parse_header(uint8_t *buf, adts_header *header){
 		case 1:
 			break;
 		default:
+			printf("wrong id\n");
 			return -1;
 	}
 	header->layer = (buf[1] & 0x06) >> 1;
 	if(header->layer != 0x00){
+		printf("XXXX wrong layer->%d\n", header->layer);
 		return -1;
 	}
 	header->protection_absent = buf[1] * 0x1;
-	header->profile = (buf[2] & 0xC0) >> 2;
+	header->profile = (buf[2] >> 6) &0x03 ;
 	switch(header->profile){
 		case 0:
 		case 1:
@@ -71,8 +73,55 @@ int adts_parse_header(uint8_t *buf, adts_header *header){
 		case 3:
 			break;
 		default:
+			printf("wrong profile ->%d\n", header->profile);
 			return -1;
 	}
+	header->sf_index = (buf[2]>> 2) &0x0F;
+	switch(header->sf_index){
+		case  0:
+		case  1:
+		case  2:
+		case  3:
+		case  4:
+		case  5:
+		case  6:
+		case  7:
+		case  8:
+		case  9:
+		case 10:
+		case 11:
+		case 12:
+		case 13:
+		case 14:
+		case 15:
+			break;
+		default:
+			printf("wrong sample index ->%d\n", header->sf_index);
+			return -1;
+	}
+	printf("sf index ->%d\n",header->sf_index);
+	header->private_bit = (buf[2] >> 1)  &1;
+	header->channel_configuration = ((buf[2] & 1 ) << 2) | (buf[3] >> 6);
+	switch(header->channel_configuration){
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+		case 7:
+			break;
+		default:
+			printf("wroing channel config ->%d\n", header->channel_configuration);
+			return -1;
+	}
+	header->original = (buf[3] >> 5) & 1;
+	header->home = (buf[3]>> 4)  & 1;
+	
+
+	//adts_variable header
+
 
 
 	return 0;
@@ -98,7 +147,7 @@ int aac_parser_update_adts_header_list(struct aac_parser_t *parser){
 				continue;
 			}
 			parser->adts_offset_list[adts_index++] = i;
-			printf("find header ->%d\n", i);
+			printf("\t!!!find header ->%d\n", i);
 		}
 		//break;
 		if(i > 2500){
