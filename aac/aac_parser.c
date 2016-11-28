@@ -139,6 +139,7 @@ int aac_parser_update_adts_header_list(struct aac_parser_t *parser){
 	int i = 0;
 	uint8_t *header = NULL;
 	int adts_index = 0;
+	int adts_len  = 0;
 	for(i = 0; i < parser->size; i++){
 		header = (uint8_t *)(parser->buf+i);
 		if(*header  == 0xFF && (*(header+1) & 0xF0) == 0xF0){
@@ -150,12 +151,18 @@ int aac_parser_update_adts_header_list(struct aac_parser_t *parser){
 			}
 			printf("\n");
 #endif
-			if(adts_parse_header(header, parser->adts_header_list + adts_index) < 0){
+			adts_len = adts_parse_header(header, parser->adts_header_list + adts_index);
+			if(adts_len < 0){
 				//printf("header ->%d %X %X\n", i, *header,*(header+i));
 				continue;
 			}
-			parser->adts_offset_list[adts_index++] = i;
-			printf("\t!!!find header ->%d\n", i);
+			else{
+				parser->adts_offset_list[adts_index++] = i;
+				printf("\t!!!find header ->%d\n", i);
+				i += adts_len;
+				i--;
+
+			}
 		}
 		//break;
 		if(i > 2500){
