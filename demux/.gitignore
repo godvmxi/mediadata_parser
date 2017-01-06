@@ -3,3 +3,4 @@ CMakeLists.txt
 .*.sw*
 Makefile
 *.cmake
+*.bin
