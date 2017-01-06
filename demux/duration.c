@@ -45,14 +45,17 @@ static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt, cons
 
 int main(int argc, char **argv)
 {
-    AVOutputFormat *ofmt = NULL;
     AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
     AVPacket pkt;
-    const char *in_filename, *out_filename;
+    const char *in_filename;
+    int stream_index = 0;
     int ret, i;
-
-    in_filename  = argv[1];
-
+    if(argc < 3){
+        printf("usage: %s stream_index  file\n");
+        exit(1);
+    }
+    stream_index = atoi(argv[1]);
+    in_filename  = argv[2];
 
     av_register_all();
 
@@ -65,34 +68,34 @@ int main(int argc, char **argv)
         fprintf(stderr, "Failed to retrieve input stream information");
         goto end;
     }
-
+    int time_scale = 0;
+    AVStream *stream;
     av_dump_format(ifmt_ctx, 0, in_filename, 0);
-#if 0
-    out_filename = argv[2];
-    avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, out_filename);
-    if (!ofmt_ctx) {
-        fprintf(stderr, "Could not create output context\n");
-        ret = AVERROR_UNKNOWN;
-        goto end;
-    }
-    ofmt = ofmt_ctx->oformat;
-#endif
-
     for (i = 0; i < ifmt_ctx->nb_streams; i++) {
-        AVStream *in_stream = ifmt_ctx->streams[i];
-		//printf("..............>%d %d\n",in_stream->index , in_stream->id);
-		continue ;
+        stream = ifmt_ctx->streams[i];
+		printf("..............>%d %d\n",stream->index , stream->id);
     }
+
+    stream = ifmt_ctx->streams[stream_index];
+    time_scale  = stream->time_base.den / stream->time_base.num;
+    printf("timescale ->%d\n", time_scale);
 	int counter = 0;
+    uint64_t last_ts = 0;
     while (1) {
 		counter++;
-        AVStream *in_stream, *out_stream;
 
         ret = av_read_frame(ifmt_ctx, &pkt);
-		if (pkt.stream_index == 1 || pkt.stream_index == 2) {
-		printf("frame -->%3d : %d  %6dS %6dD %6dP\n",\
-				counter,pkt.stream_index,pkt.size ,pkt.pts ,pkt.dts);
-		}
+        if (pkt.stream_index == stream_index ) {
+            printf("frame -->%3d : size:%6d ts:%8d pts: %8lld dur:%6lld",\
+                    counter,pkt.size, pkt.pts*1000/time_scale, pkt.dts, pkt.pts - last_ts);
+            if(pkt.pts - last_ts > 100){
+                printf(" XXXX \n");
+            }
+            else{
+                printf("\n");
+            }
+            last_ts = pkt.pts;
+        }
         if (ret < 0)
             break;
         av_packet_unref(&pkt);
