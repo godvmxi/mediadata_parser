@@ -89,10 +89,8 @@ int main(int argc, char **argv)
         AVStream *in_stream, *out_stream;
 
         ret = av_read_frame(ifmt_ctx, &pkt);
-		if (pkt.stream_index == 1 || pkt.stream_index == 2) {
 		printf("frame -->%3d : %d  %6dS %6dD %6dP\n",\
 				counter,pkt.stream_index,pkt.size ,pkt.pts ,pkt.dts);
-		}
         if (ret < 0)
             break;
         av_packet_unref(&pkt);

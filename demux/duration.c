@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     int stream_index = 0;
     int ret, i;
     if(argc < 3){
-        printf("usage: %s stream_index  file\n");
+        printf("usage: %s stream_index  file\n", argv[0]);
         exit(1);
     }
     stream_index = atoi(argv[1]);
@@ -86,7 +86,7 @@ int main(int argc, char **argv)
 
         ret = av_read_frame(ifmt_ctx, &pkt);
         if (pkt.stream_index == stream_index ) {
-            printf("frame -->%3d : size:%6d ts:%8d pts: %8lld dur:%6lld",\
+            printf("frame -->%8d : size:%8d ts:%8d pts: %8lld dur:%6lld",\
                     counter,pkt.size, pkt.pts*1000/time_scale, pkt.dts, pkt.pts - last_ts);
             if(pkt.pts - last_ts > 100){
                 printf(" XXXX \n");
