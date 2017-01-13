@@ -46,9 +46,13 @@ static void log_packet(const AVFormatContext *fmt_ctx, const AVPacket *pkt, cons
 int main(int argc, char **argv)
 {
     AVOutputFormat *ofmt = NULL;
-    AVFormatContext *ifmt_ctx = NULL, *ofmt_ctx = NULL;
+    AVFormatContext *ifmt_ctx = NULL;
     AVPacket pkt;
-    const char *in_filename, *out_filename;
+    int index ;
+    AVStream *stream = NULL;
+    int timescale;
+    uint64_t timestamp = 0;
+    const char *in_filename;
     int ret, i;
 
     in_filename  = argv[1];
@@ -79,18 +83,23 @@ int main(int argc, char **argv)
 #endif
 
     for (i = 0; i < ifmt_ctx->nb_streams; i++) {
-        AVStream *in_stream = ifmt_ctx->streams[i];
-		//printf("..............>%d %d\n",in_stream->index , in_stream->id);
+        stream = ifmt_ctx->streams[i];
+		printf("..............>%d %d\n",stream->index , stream->id);
 		continue ;
     }
-	int counter = 0;
+    int counter = 0;
     while (1) {
 		counter++;
-        AVStream *in_stream, *out_stream;
+        AVStream *stream, *out_stream;
 
         ret = av_read_frame(ifmt_ctx, &pkt);
-		printf("frame -->%3d : %d  %6dS %6dD %6dP\n",\
-				counter,pkt.stream_index,pkt.size ,pkt.pts ,pkt.dts);
+        index = pkt.stream_index;
+        stream = ifmt_ctx->streams[index];
+        timescale = stream->time_base.den / stream->time_base.num;
+        timestamp =  pkt.dts * 1000/ timescale;
+//        printf("info -> %d %d\n", index, timescale);
+		printf("frame -->%3d : ts:%8lld %d  %6dS %6dD %6dP\n",\
+				counter, timestamp, pkt.stream_index,pkt.size ,pkt.pts ,pkt.dts);
         if (ret < 0)
             break;
         av_packet_unref(&pkt);
