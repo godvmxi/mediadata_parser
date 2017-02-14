@@ -49,13 +49,19 @@ int main(int argc, char **argv)
     AVPacket pkt;
     const char *in_filename;
     int stream_index = 0;
+    uint64_t max_duration = 100;
     int ret, i;
-    if(argc < 3){
-        printf("usage: %s stream_index  file\n", argv[0]);
+    if(argc < 4){
+        printf("usage: %s stream_index  max_duration file\n", argv[0]);
         exit(1);
     }
     stream_index = atoi(argv[1]);
-    in_filename  = argv[2];
+    max_duration = atoi(argv[2]);
+    in_filename  = argv[3];
+    printf("stream index -> %d\n", stream_index);
+    printf("max duration -> %lld\n", max_duration);
+    printf("file -> %s\n", in_filename);
+    sleep(1);
 
     av_register_all();
 
@@ -88,8 +94,8 @@ int main(int argc, char **argv)
         if (pkt.stream_index == stream_index ) {
             printf("frame -->%8d : size:%8d ts:%8d pts: %8lld dur:%6lld",\
                     counter,pkt.size, pkt.pts*1000/time_scale, pkt.dts, pkt.pts - last_ts);
-            if(pkt.pts - last_ts > 100){
-                printf(" XXXX \n");
+            if(pkt.pts - last_ts > max_duration){
+                printf(" XXXXXXXX \n");
             }
             else{
                 printf("\n");

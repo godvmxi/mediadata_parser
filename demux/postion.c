@@ -74,16 +74,6 @@ int main(int argc, char **argv)
     }
 
     av_dump_format(ifmt_ctx, 0, in_filename, 0);
-#if 0
-    out_filename = argv[2];
-    avformat_alloc_output_context2(&ofmt_ctx, NULL, NULL, out_filename);
-    if (!ofmt_ctx) {
-        fprintf(stderr, "Could not create output context\n");
-        ret = AVERROR_UNKNOWN;
-        goto end;
-    }
-    ofmt = ofmt_ctx->oformat;
-#endif
 
     for (i = 0; i < ifmt_ctx->nb_streams; i++) {
         stream = ifmt_ctx->streams[i];
@@ -101,11 +91,12 @@ int main(int argc, char **argv)
         timescale = stream->time_base.den / stream->time_base.num;
         timestamp =  pkt.dts * 1000/ timescale;
 //        printf("info -> %d %d\n", index, timescale);
+//        printf("filter ->%d :cur:%d\n", index_filter, pkt.stream_index);
         if(index_filter == -1){
             printf("frame -->%3d ts:%8lld index:%d size:%7d pts:%8lld pos:%8lld\n",\
                     counter, timestamp, pkt.stream_index, pkt.size ,pkt.pts, pkt.pos);
         }
-        else if(index_filter = pkt.stream_index){
+        else if(index_filter == pkt.stream_index){
             printf("frame -->%3d ts:%8lld index:%d size:%7d pts:%8lld pos:%8lld\n",\
                     counter, timestamp, pkt.stream_index, pkt.size ,pkt.pts, pkt.pos);
         }
